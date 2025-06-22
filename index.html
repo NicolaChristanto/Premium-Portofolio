@@ -921,55 +921,49 @@
                     formMessage.style.display = 'none'; // Hide previous messages
 
                     const formData = new FormData(contactForm);
-                    const name = formData.get('name');
-                    const email = formData.get('email');
-                    const subject = formData.get('subject');
-                    const message = formData.get('message');
+                    
+                    // Construct the data to be sent
+                    const data = {
+                        name: formData.get('name'),
+                        email: formData.get('email'),
+                        subject: formData.get('subject'),
+                        message: formData.get('message')
+                    };
 
-                    // Simulate API call for sending email
-                    // In a real application, this would send data to your backend service
-                    // that then sends the email. Gemini cannot directly send emails.
+                    // !!! PENTING: GANTI DENGAN URL ENDPOINT FORMSPREE ANDA !!!
+                    // URL yang Anda dapatkan dari screenshot: https://formspree.io/f/xpwryzrz
+                    const FORMSPREE_FORM_URL = "https://formspree.io/f/xpwryzrz"; // <--- SUDAH DIGANTI
+
+
                     try {
-                        const payload = {
-                            contents: [{
-                                role: "user",
-                                parts: [
-                                    {text: `Nama: ${name}\nEmail: ${email}\nSubjek: ${subject}\nPesan: ${message}\n\nIni adalah pesan dari formulir kontak di portofolio web saya.`}
-                                ]
-                            }]
-                        };
-
-                        // NOTE: This fetch call is a placeholder for actual backend integration.
-                        // It demonstrates how you might interact with an API.
-                        // For a real contact form, you'd send this data to a server-side endpoint
-                        // (e.g., using Node.js, Python, PHP) which then sends the email.
-                        // The Gemini API call here is merely illustrative within this environment
-                        // and will not actually send an email.
-                        const apiKey = ""; // Canvas will provide this key at runtime if needed for Gemini models.
-                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                        // Simulating a network request and success/failure
-                        const response = await fetch(apiUrl, {
+                        const response = await fetch(FORMSPREE_FORM_URL, {
                             method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify(payload)
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json' // Penting untuk Formspree agar tidak redirect
+                            },
+                            body: JSON.stringify(data)
                         });
 
-                        const result = await response.json();
-                        
-                        if (response.ok) { // Check if the network request was successful
-                            // You might check result.candidates for actual LLM response if needed for feedback
+                        const result = await response.json(); // Formspree mengembalikan JSON
+
+                        if (response.ok) { // Formspree mengirimkan response.ok jika berhasil
                             formMessage.textContent = 'Pesan Anda berhasil terkirim! Saya akan segera menghubungi Anda.';
                             formMessage.className = 'message-box success';
-                            contactForm.reset(); // Clear form fields on success
+                            contactForm.reset(); // Hapus isian form setelah berhasil
                         } else {
-                            formMessage.textContent = 'Terjadi kesalahan saat mengirim pesan. Mohon coba lagi nanti.';
+                            // Tangani error dari Formspree
+                            let errorMessage = 'Terjadi kesalahan saat mengirim pesan. Mohon coba lagi nanti.';
+                            if (result.errors) {
+                                errorMessage += ' Detail: ' + result.errors.map(err => err.message).join(', ');
+                            }
+                            formMessage.textContent = errorMessage;
                             formMessage.className = 'message-box error';
-                            console.error('Error response from API:', result);
+                            console.error('Formspree error:', result);
                         }
 
                     } catch (error) {
-                        formMessage.textContent = 'Terjadi kesalahan saat mengirim pesan. Mohon coba lagi nanti.';
+                        formMessage.textContent = 'Terjadi kesalahan jaringan. Mohon periksa koneksi Anda dan coba lagi.';
                         formMessage.className = 'message-box error';
                         console.error('Error submitting form:', error);
                     } finally {
@@ -981,3 +975,4 @@
     </script>
 </body>
 </html>
+
